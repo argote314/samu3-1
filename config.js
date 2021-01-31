@@ -24,11 +24,11 @@ const { randomNimek, sleep, wall, tulis, ss } = require('./lib/functions')
 const { owner, donate, down, help, admins, adult, readme, lang } = require('./lib/help')
 const { stdout } = require('process')
 const bent = require('bent')
+const { doing } = require('./lib/translate.js')
 const { meme, msgFilter, translate, kill } = require('./lib')
 const { uploadImages } = require('./lib/fether')
 const feature = require('./lib/poll')
 const { sobre } = require('./lib/sobre')
-const { belle } = require('./lib/belle')
 const BrainlySearch = require('./lib/brainly')
 const { removeBackgroundFromImageBase64 } = require('remove.bg')
 const fetch = require('node-fetch');
@@ -47,10 +47,10 @@ module.exports = kconfig = async (kill, message) => {
         let { pushname, verifiedName, formattedName } = sender
         pushname = pushname || verifiedName || formattedName
 		const techapi = 'INSIRA UMA API DO SITE OPEN API I-TECH' // MUDE ISSO PARA UMA API DO SITE QUE TA ALI
-        const double = Math.floor(Math.random() * 4) + 1
+        const double = Math.floor(Math.random() * 2) + 1
         const four = Math.floor(Math.random() * 4) + 1
         const triple = Math.floor(Math.random() * 3) + 1
-        const octo = Math.floor(Math.random() * 5) + 1
+        const cinco = Math.floor(Math.random() * 5) + 1
         const six = Math.floor(Math.random() * 6) + 1
         const seven = Math.floor(Math.random() * 7) + 1
         const octo = Math.floor(Math.random() * 8) + 1
@@ -207,7 +207,7 @@ module.exports = kconfig = async (kill, message) => {
             case 'antistiker':
                     if (!isGroupMsg) return kill.reply(from, 'Lo sentimos, este comando solo se puede usar dentro del grupo!', id)
                     if (!isGroupAdmins) return kill.reply(from, 'Falló, este comando solo puede ser utilizado por administradores de grupo!', id)
-                    if (kill[0] == 'on') {
+                    if (args[0] == 'on') {
                         var cek = antisticker.includes(chatId);
                         if(cek){
                             return kill.reply(from, '*Anti Spam Sticker Detector* ya activo en este grupo', id) //if number already exists on database
@@ -278,10 +278,6 @@ module.exports = kconfig = async (kill, message) => {
 		case 'about':
 			await kill.sendFile(from, './lib/media/img/iris.png', 'iris.png', sobre, id)
 			break
-			
-		case 'belle':
-			await kill.sendFile(from, './lib/media/img/belle.png', 'belle.png', belle, id)
-			break
 
 			
         case 'stickernobg':
@@ -304,34 +300,17 @@ module.exports = kconfig = async (kill, message) => {
         case 'stickergif':
         case 'stikergif':
         case 'gif':
-            if (isMedia) {
-                    if (type == 'video') {
-                       if (message.duration < 15) {
-                       kill.sendAnimatedSticker(message)
-                       } else {
-                       await kill.reply(from, 'The given file is too large for converting', id)
-                       }
-                    } else if (type == 'image') {
-                      const mediaData = await decryptMedia(message)
-                      const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
-                      const baseImg = imageBase64.replace('video/mp4','image/gif')
-                      await kill.sendImageAsSticker(from, baseImg)
-                    }
-                } else if (quotedMsg && quotedMsg.type == 'image') {
-                    const mediaData = await decryptMedia(quotedMsg)
-                    const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
-                    await kill.sendImageAsSticker(from, imageBase64)
-                } else if (quotedMsg && quotedMsg.type == 'video') {
-                          if (message.duration < 15) {
-                          kill.sendAnimatedSticker(message)
-                          } else {
-                          await kill.reply(from, 'The given file is too large for converting', id)
-                          }
-                } else {
-                  kill.reply(from, 'You did not tag a picture or video, Baka', message.id)
-                    }
-                break
-	break
+            if (isMedia && type == 'video') {
+                if (mimetype === 'video/mp4' && message.duration < 30) {
+                const mediaData = await decryptMedia(message, uaOverride)
+               const filename = `./media/aswu.mp4`
+                await fs.writeFile(filename, mediaData)
+                await exec('ffmpeg -i ./media/aswu.mp4 -vf scale=512:-1 -r 10 -f image2pipe -framerate 24 -vcodec ppm - | convert -delay 0 -loop 0 - ./media/output.gif')
+                const contents = await fs.readFile('./media/output.gif', {encoding: 'base64'}) 
+                await kill.sendImageAsSticker(from, `data:image/gif;base64,${contents.toString('base64')}`)
+                }
+            }
+		break
 		    
 		case 'upimg':
             if (isMedia && type === 'image') {
@@ -541,7 +520,7 @@ module.exports = kconfig = async (kill, message) => {
 		case 'img':
             if (quotedMsg && quotedMsg.type == 'sticker') {
                 const mediaData = await decryptMedia(quotedMsg)
-                kill.reply(from, `Podrias esperar porfavor? esto lleva un poco de tiempo👑`, id)
+                kill.reply(from, `Só esperar, pode levar um tempinho...`, id)
                 const stickerImage = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
                 await kill.sendFile(from, stickerImage, '', 'Disfruta, aquí tienes tu foto! :D', id)
 			} else if (!quotedMsg) return kill.reply(from, `Lo siento, esto es solo para stickers...`, id)
@@ -754,31 +733,47 @@ module.exports = kconfig = async (kill, message) => {
 
 
          case 'mp3': // eu censurei o acesso pois as apis estão offlines, e fazer isso evita que usem o comando e te de problemas
-             if (args.length == 0) return kill.reply(from, 'Lo uso incorrectamente.', id)
-            axios.get(`http://st4rz.herokuapp.com/api/yta2?url=${body.slice(5)}`)
-            .then(async(rest) => {
-					var m3pa = rest.data.result
-					var m3ti = rest.data.title
-					var m3tu = rest.data.thumb
-					var m3fo = rest.data.ext
-					await kill.sendFileFromUrl(from, m3tu, '', `Titulo: ${m3ti}\nFormato:${m3fo}\n\nEspero averlo echo bien, ahora espere a que el video se envie, NO LO UTILIZE OTRA VEZ!!`, id)
-					await kill.sendFileFromUrl(from, m3pa, '', '', id)
-                })
-			break
+             if (args.length === 0) return client.reply(from, 'Envie el comando junto con el link de YouTube')
+            let isLinks = args[0].match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/)
+            if (!isLinks) return client.reply(from, mess.error.Iv, id)
+            try {
+                client.reply(from, mess.wait, id)
+                const resp = await get.get(`https://mhankbarbars.herokuapp.com/api/yta?url=${args[1]}&apiKey=${apiKey}`).json()
+                if (resp.error) {
+                    client.reply(from, resp.error, id)
+                } else {
+                    const { title, thumb, filesize, result } = await resp
+                    if (Number(filesize.split(' MB')[0]) >= 30.00) return client.reply(from, 'Lo sentimos, la duración del video superó el límite máximo!', id)
+                    client.sendFileFromUrl(from, thumb, 'thumb.jpg', `➸ *Title* : ${title}\n➸ *Filesize* : ${filesize}\n\nEspere un momento a que el proceso de envío del archivo se complete.`, id)
+                    await client.sendFileFromUrl(from, result, `${title}.mp3`, '', id).catch(() => client.reply(from, mess.error.Yt3, id))
+                    //await client.sendAudio(from, result, id)
+                }
+            } catch (err) {
+                client.sendText(ownerNumber[0], 'Error ytmp3 : '+ err)
+                client.reply(from, mess.error.Yt3, id)
+            }
+            break
 
 
         case 'mp4':
-           if (args.length == 0) return kill.reply(from, 'Lo uso incorretamente.', id)
-            axios.get(`http://st4rz.herokuapp.com/api/ytv2?url=${body.slice(5)}`)
-            .then(async(rest) => {
-					var mp4 = rest.data.result
-					var tmp4 = rest.data.title
-					var m4tu = rest.data.thumb
-					var m4fo = rest.data.ext
-					await kill.sendFileFromUrl(from, m4tu, '', `Titulo: ${tmp4}\nFormato:${m4fo}\n\nEspero averlo echo bien, ahora espere a que el video se envie, NO LO UTILIZE OTRA VEZ!!`, id)
-					await kill.sendFileFromUrl(from, mp4, `video.mp4`, tmp4, id)
-                })
-			break
+           if (args.length === 0) return client.reply(from, 'Envie el comando junto con el link de YouTube')
+            let isLin = args[0].match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/)
+            if (!isLin) return client.reply(from, mess.error.Iv, id)
+            try {
+                client.reply(from, mess.wait, id)
+                const ytv = await get.get(`https://mhankbarbars.herokuapp.com/api/ytv?url=${args[1]}&apiKey=${apiKey}`).json()
+                if (ytv.error) {
+                    client.reply(from, ytv.error, id)
+                } else {
+                    if (Number(ytv.filesize.split(' MB')[0]) > 40.00) return client.reply(from, 'Lo sentimos, la duración del video superó el límite máximo!', id)
+                    client.sendFileFromUrl(from, ytv.thumb, 'thumb.jpg', `➸ *Title* : ${ytv.title}\n➸ *Filesize* : ${ytv.filesize}\n\nEspere un momento a que el proceso de envío del archivo se complete.`, id)
+                    await client.sendFileFromUrl(from, ytv.result, `${ytv.title}.mp4`, '', id).catch(() => client.reply(from, mess.error.Yt4, id))
+                }
+            } catch (er) {
+                client.sendText(ownerNumber[0], 'Error ytmp4 : '+ er)
+                client.reply(from, mess.error.Yt4, id)
+            }
+            break
 			
         case 'video':
             if (args.length == 0) return kill.reply(from, 'Lo usaste incorrectamente.', id)
@@ -918,25 +913,17 @@ module.exports = kconfig = async (kill, message) => {
 
 
         case 'tts': // Esse é enormeeeee, fazer o que, sou baiano pra jogar noutro js
-            if (args.length == 0) return kill.reply(from, 'Wrong Fromat!')
-                const ttsEn = require('node-gtts')('en')
-	        const ttsJp = require('node-gtts')('ja')
+            if (args.length === 0) return client.reply(from, 'Enviar comado *!tts [id, en, jp, ar] [texto], *ejemplo!* *tts id hola samu*')
+            const ttsGB = require('node-gtts')(args[0])
             const dataText = body.slice(8)
-            if (dataText === '') return kill.reply(from, 'Baka?', message.id)
-            if (dataText.length > 250) return kill.reply(from, 'Unable to convert', message.id)
-            var dataBhs = body.slice(5, 7)
-	        if (dataBhs == 'id') {
-		    } else if (dataBhs == 'en') {
-                ttsEn.save('./tts/resEn.mp3', dataText, function () {
-                    kill.sendPtt(from, './media/tts/resEn.mp3', message.id)
-                })
-		    } else if (dataBhs == 'jp') {
-                ttsJp.save('./tts/resJp.mp3', dataText, function () {
-                    kill.sendPtt(from, './media/tts/resJp.mp3', message.id)
-                })
-		    } else {
-		        kill.reply(from, 'Currently only English and Japanese are supported!', message.id)
-            }
+                if (dataText === '') return kill.reply(from, 'cual es el texto..', id)
+                try {
+                    ttsGB.save('./media/tts.mp3', dataText, function () {
+                    kill.sendPtt(from, './media/tts.mp3', id)
+                    })
+                } catch (err) {
+                    kill.reply(from, err, id)
+                }
             break
 
         case 'idiomas':
@@ -2395,7 +2382,7 @@ module.exports = kconfig = async (kill, message) => {
 		case 'ship':
             lvak = body.trim().split(' ')
 			if (args.length == 2) {
-				await kill.sendTextWithMentions(from, ' ---------------\n\n    ' + lvak[1] + '  x  ' + lvak[2] +'\n\n---------------\n\nTienen '+ lvpc + '% de posibilidades')
+				await kill.sendTextWithMentions(from, '❤️ ' + lvak[1] + ' tener la oportunidad de ' + lvpc + '% de citas ' + lvak[2] + '. 👩‍❤️‍👨')
             } else {
 				await kill.reply(from, 'Falta la pareja de tortolitos!', id)
             }
@@ -2407,9 +2394,9 @@ module.exports = kconfig = async (kill, message) => {
     	    var lgbt = ["lésbica", "gay", "bissexual", "transgenero", "queer", "intersexual", "pedro-sexual", "negrosexual", "helicoptero sexual", "ageneros", "androgino", "assexual", "macaco-sexual", "dedo-sexual", "Sexo-Inexplicavel", "predio-sexual", "sexual-não-sexual", "pansexual", "kink", "incestuoso", "comedor-de-casadas", "unicornio-sexual", "maniaco-sexual"]
     	    var guei = lgbt[Math.floor(Math.random() * lgbt.length)]
 			if (args.length == 1) {
-				await kill.sendTextWithMentions(from, gaak[1] + ' eres ' + lvpc + '% ' + guei + '.')
+				await kill.sendTextWithMentions(from, gaak[1] + ' é ' + lvpc + '% ' + guei + '.')
             } else {
-				await kill.reply(from, `Tu eres  ` + lvpc + '% ' + guei + '.', id)
+				await kill.reply(from, `Você é ` + lvpc + '% ' + guei + '.', id)
             }
 			break
 			
@@ -2427,12 +2414,8 @@ module.exports = kconfig = async (kill, message) => {
 				kill.sendTextWithMentions(from, 'Oh mi! @' + persona + ' besado ' + arqa[1] + ' !')
 				if (double == 1) {
 				await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/vUrwEOLtBUnJe/giphy.gif')
-				} else if (double == 2){
-				await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/1wmtU5YhqqDKg/giphy.gif')
-				} else if (double == 3){
-				await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/G3va31oEEnIkM/giphy.gif')
 				} else {
-				await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/hnNyVPIXgLdle/giphy.gif')
+				await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/1wmtU5YhqqDKg/giphy.gif')
 				}
 			} else {
 				await kill.reply(from, 'Marque ~ solo una ~ la persona a la que quiere besar hihihi', id)
@@ -2443,8 +2426,8 @@ module.exports = kconfig = async (kill, message) => {
         case 'slap':
             arq = body.trim().split(' ')
             const person = author.replace('@c.us', '')
-            await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/Gf3AUz3eBNbTW/giphy.gif')
-            kill.sendTextWithMentions(from, '@' + person + ' *le parte la cara a* ' + arq[1])
+            await kill.sendGiphyAsSticker(from, 'https://media.giphy.com/media/S8507sBJm1598XnsgD/source.gif')
+            kill.sendTextWithMentions(from, '@' + person + ' *abofeteado* ' + arq[1])
             break
 
 
